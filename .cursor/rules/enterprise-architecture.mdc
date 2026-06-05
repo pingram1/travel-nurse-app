@@ -1,0 +1,42 @@
+---
+description: Travel Nurse App enterprise architecture — layering, security, and separation of concerns
+alwaysApply: true
+---
+
+# Travel Nurse App — Enterprise Architecture
+
+Developed by **Start Right Tutoring, LLC**.
+
+## Layering (strict)
+
+1. **`app/`** — Navigation boundaries only. Screens compose hooks + presentational components. No direct API calls or business logic in route files beyond orchestration.
+2. **`src/components/ui/`** — Shared primitives (Button, Card, Input). No domain knowledge, no API calls.
+3. **`src/components/domain/`** — Feature-specific UI. Receives data via props; never fetches directly.
+4. **`src/hooks/`** — Compose store + services for screens. Single responsibility per hook.
+5. **`src/services/`** — API client, secure storage. No React imports.
+6. **`src/store/`** — Global state (Zustand). No side effects beyond state updates.
+7. **`src/utils/`** — Pure helpers and centralized `errorHandler`.
+
+## Security (non-negotiable)
+
+- **NEVER** use `AsyncStorage` for: access tokens, refresh tokens, passwords, MFA seeds, session IDs.
+- **ALWAYS** use `src/services/secure-storage` for sensitive credentials.
+- API keys for billing or privileged operations belong on the server, not in the client bundle.
+
+## API conventions
+
+- All HTTP traffic flows through `src/services/api/client.ts`.
+- Responses use `ApiSuccessEnvelope` / `ApiErrorEnvelope` types.
+- Errors normalize to `AppError` via `src/utils/errorHandler.ts`.
+- Include `X-Request-Id` on every outbound request.
+
+## UI system
+
+- Use shared primitives from `src/components/ui/`.
+- Follow 8px grid, design tokens in `src/constants/theme.ts`, NativeWind utility classes.
+- Minimum touch target: 44×44px.
+
+## Testing
+
+- Colocate `__tests__/` alongside every major module.
+- Run `npm run validate` before merging (typecheck + lint + format + test).

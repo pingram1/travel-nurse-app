@@ -1,0 +1,19 @@
+---
+description: Strict TypeScript and code hygiene for Travel Nurse App
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+- `strict: true` with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`.
+- Prefer `type` imports: `import type { Foo } from '...'`.
+- No `any`. Use `unknown` + narrowing for untyped boundaries.
+- Zod schemas in `src/utils/validators.ts` for all external input.
+- Export explicit types for public module surfaces.
+
+## React Native
+
+- Use `StyleSheet` or NativeWind — avoid inline style objects in hot paths.
+- Prefer `FlatList` over `ScrollView` for long lists.
+- Platform-specific code via `Platform.select` or `.ios.tsx` / `.android.tsx` files.
