@@ -4,6 +4,7 @@ import type {
   LodgingStipendVariance,
   StipendCalculationInput,
 } from '@/types';
+import { calculateTakeHomePay } from '@/utils/currency';
 
 const VARIANCE_TOLERANCE = 0.01;
 
@@ -53,10 +54,13 @@ export function buildStipendCalculation(input: StipendCalculationInput): {
     input.dailyHousingStipendRate,
   );
 
-  const estimatedTakeHome =
-    input.contractGrossPay -
-    housingSpend * contractDays +
-    input.dailyHousingStipendRate * contractDays;
+  const estimatedTakeHome = calculateTakeHomePay({
+    grossPay: input.contractGrossPay,
+    housingStipend: input.dailyHousingStipendRate * contractDays,
+    mealStipend: 0,
+    travelReimbursement: 0,
+    deductions: housingSpend * contractDays,
+  });
 
   const subscriptionDeductibleNote = input.highlightTaxDeductibility
     ? 'Your subscription may qualify as a tax-deductible professional expense. Consult a tax advisor.'

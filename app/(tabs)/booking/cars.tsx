@@ -4,6 +4,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { CarRentalCard } from '@/components/domain/CarRentalCard';
 import { Button, Card, SectionHeader } from '@/components/ui';
 import { useTrip } from '@/hooks/useTrip';
+import { getNextStep, getStepRoute, resolveWorkflowSteps } from '@/utils/booking';
 
 export default function CarRentalScreen() {
   const router = useRouter();
@@ -54,8 +55,11 @@ export default function CarRentalScreen() {
         label="Continue to itinerary summary"
         variant={trip.selectedCarRental ? 'success' : 'secondary'}
         onPress={() => {
-          trip.setActiveStep('review');
-          router.push('./review');
+          const next = getNextStep(resolveWorkflowSteps(trip.housingFirstEnabled), 'cars');
+          if (!next) return;
+          trip.setActiveStep(next);
+          const route = getStepRoute(next);
+          if (route) router.push(route);
         }}
       />
     </ScrollView>

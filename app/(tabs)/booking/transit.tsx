@@ -4,6 +4,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { TransitCard } from '@/components/domain/TransitCard';
 import { Badge, Button, Card, SectionHeader } from '@/components/ui';
 import { useTrip } from '@/hooks/useTrip';
+import { getNextStep, getStepRoute, resolveWorkflowSteps } from '@/utils/booking';
 import { formatTime } from '@/utils/datetime';
 
 const PICKUP_BUFFER_MINUTES = 45;
@@ -100,8 +101,11 @@ export default function TransitScreen() {
       <Button
         label="Continue to car rental"
         onPress={() => {
-          trip.setActiveStep('cars');
-          router.push('./cars');
+          const next = getNextStep(resolveWorkflowSteps(trip.housingFirstEnabled), 'transit');
+          if (!next) return;
+          trip.setActiveStep(next);
+          const route = getStepRoute(next);
+          if (route) router.push(route);
         }}
       />
     </ScrollView>

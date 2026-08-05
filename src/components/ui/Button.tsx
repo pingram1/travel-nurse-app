@@ -1,5 +1,7 @@
 import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
 
+import { TOUCH_TARGET_MIN } from '@/constants/theme';
+
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -20,8 +22,14 @@ const variantClasses: Record<ButtonVariant, string> = {
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'px-3 py-2 min-h-[36px] rounded-lg',
-  md: 'px-4 py-3 min-h-[44px] rounded-xl',
+  md: 'px-4 py-3 rounded-xl',
   lg: 'px-6 py-4 min-h-[52px] rounded-xl',
+};
+
+const sizeMinHeight: Record<ButtonSize, number | undefined> = {
+  sm: undefined,
+  md: TOUCH_TARGET_MIN,
+  lg: undefined,
 };
 
 const textVariantClasses: Record<ButtonVariant, string> = {
@@ -48,6 +56,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       disabled={isDisabled}
+      style={sizeMinHeight[size] ? { minHeight: sizeMinHeight[size] } : undefined}
       className={`flex-row items-center justify-center gap-2 ${variantClasses[variant]} ${sizeClasses[size]} ${isDisabled ? 'opacity-50' : ''} ${className ?? ''}`}
       {...props}
     >

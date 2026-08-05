@@ -30,6 +30,15 @@ export const STEP_LABELS: Record<BookingWorkflowStep, string> = {
   review: 'Summary',
 };
 
+/** Relative Expo Router hrefs for stack screens (hub steps stay on index). */
+export const STEP_ROUTES: Partial<Record<BookingWorkflowStep, `./${string}`>> = {
+  seats: './seats',
+  dining: './dining',
+  transit: './transit',
+  cars: './cars',
+  review: './review',
+};
+
 export function resolveWorkflowSteps(housingFirstEnabled: boolean): BookingWorkflowStep[] {
   return housingFirstEnabled ? HOUSING_FIRST_WORKFLOW : STANDARD_WORKFLOW;
 }
@@ -43,6 +52,10 @@ export function getNextStep(
     return null;
   }
   return steps[index + 1] ?? null;
+}
+
+export function getStepRoute(step: BookingWorkflowStep): `./${string}` | null {
+  return STEP_ROUTES[step] ?? null;
 }
 
 export function getStepProgress(

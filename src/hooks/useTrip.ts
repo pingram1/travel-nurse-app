@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { useStipendStore } from '@/store/stipendStore';
 import { selectTripData, useTripStore, type TripSelectors } from '@/store/tripStore';
-import type { BookingWorkflowStep, SeatSelection } from '@/types';
+import type { BookingWorkflowStep, SeatSelection, WorkOrder } from '@/types';
 
 export interface UseTripResult extends TripSelectors {
   selectedHospitalId: string | null;
@@ -11,6 +11,7 @@ export interface UseTripResult extends TripSelectors {
   housingFirstEnabled: boolean;
   activeStep: BookingWorkflowStep;
   dailyStipendRate: number;
+  workOrder: WorkOrder | null;
   selectHospital: (hospitalId: string) => void;
   selectLodging: (lodgingId: string | null) => void;
   selectFlight: (flightId: string | null) => void;
@@ -21,6 +22,7 @@ export interface UseTripResult extends TripSelectors {
   setHousingFirstEnabled: (enabled: boolean) => void;
   setActiveStep: (step: BookingWorkflowStep) => void;
   setContractDates: (start: string | null, end: string | null) => void;
+  setWorkOrder: (workOrder: WorkOrder | null) => void;
 }
 
 export function useTrip(): UseTripResult {
@@ -67,6 +69,7 @@ export function useTrip(): UseTripResult {
     housingFirstEnabled: trip.housingFirstEnabled,
     activeStep: trip.activeStep,
     dailyStipendRate,
+    workOrder: trip.workOrder,
     selectHospital: trip.selectHospital,
     selectLodging: trip.selectLodging,
     selectFlight: trip.selectFlight,
@@ -77,5 +80,6 @@ export function useTrip(): UseTripResult {
     setHousingFirstEnabled: trip.setHousingFirstEnabled,
     setActiveStep: trip.setActiveStep,
     setContractDates: trip.setContractDates,
+    setWorkOrder: trip.setWorkOrder,
   };
 }

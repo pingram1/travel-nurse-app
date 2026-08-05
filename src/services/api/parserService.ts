@@ -2,7 +2,11 @@ import { apiPost } from '@/services/api/client';
 import type { ApiSuccessEnvelope } from '@/types/api';
 import type { ParsedWorkOrderFields, WorkOrder, WorkOrderSource } from '@/types';
 import { generateRequestId } from '@/utils/uuid';
-import { parseWorkOrderContent, workOrderFieldsSchema } from '@/utils/validators';
+import {
+  parseWorkOrderContent,
+  parseWorkOrderRequestSchema,
+  workOrderFieldsSchema,
+} from '@/utils/validators';
 
 const PARSE_PATH = '/work-orders/parse';
 
@@ -20,10 +24,16 @@ export interface ParseWorkOrderResponse {
 export async function parseWorkOrderUpload(
   request: ParseWorkOrderRequest,
 ): Promise<ApiSuccessEnvelope<ParseWorkOrderResponse>> {
+  const validated = parseWorkOrderRequestSchema.parse(request);
+  const payload: ParseWorkOrderRequest = {
+    source: validated.source,
+    content: validated.content,
+    ...(validated.filename ? { filename: validated.filename } : {}),
+  };
   try {
-    return await apiPost<ParseWorkOrderResponse, ParseWorkOrderRequest>(PARSE_PATH, request);
+    return await apiPost<ParseWorkOrderResponse, ParseWorkOrderRequest>(PARSE_PATH, payload);
   } catch {
-    return buildStubParseResult(request);
+    return buildStubParseResult(payload);
   }
 }
 

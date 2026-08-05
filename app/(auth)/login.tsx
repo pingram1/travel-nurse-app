@@ -5,14 +5,25 @@ import { Text, View } from 'react-native';
 import { Button, Card, Input } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import type { AuthSession } from '@/types';
+import { getUserFacingMessage, normalizeError } from '@/utils/errorHandler';
+import { loginSchema } from '@/utils/validators';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
+    setError(null);
+    const parsed = loginSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      const first = parsed.error.issues[0]?.message ?? 'Invalid credentials';
+      setError(first);
+      return;
+    }
+
     setLoading(true);
     try {
       const mockSession: AuthSession = {
@@ -21,7 +32,7 @@ export default function LoginScreen() {
         expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
         user: {
           id: 'user-1',
-          email,
+          email: parsed.data.email,
           firstName: 'Travel',
           lastName: 'Nurse',
           role: 'nurse',
@@ -31,6 +42,8 @@ export default function LoginScreen() {
       };
       await signIn(mockSession);
       router.replace('/(tabs)/booking');
+    } catch (err) {
+      setError(getUserFacingMessage(normalizeError(err)));
     } finally {
       setLoading(false);
     }
@@ -56,6 +69,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
           />
           <Input label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+          {error ? <Text className="text-sm text-danger-600">{error}</Text> : null}
           <Button label="Sign In" onPress={() => void handleLogin()} loading={loading} />
         </View>
       </Card>

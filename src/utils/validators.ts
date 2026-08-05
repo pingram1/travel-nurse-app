@@ -72,6 +72,11 @@ export const passwordSchema = z
   .regex(/[a-z]/, 'Password must include a lowercase letter')
   .regex(/[0-9]/, 'Password must include a number');
 
+/** Human-readable summary kept in sync with `passwordSchema` constraints. */
+export function describePasswordPolicy(): string {
+  return 'Accounts use a 12+ character password with upper, lower, and numeric characters.';
+}
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Password is required'),

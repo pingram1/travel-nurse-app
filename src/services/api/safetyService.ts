@@ -13,7 +13,8 @@ export interface FacilitySafetyQuery {
   zipCode: string;
 }
 
-function gradeFromScores(
+/** Shared composite grade used by live stubs and trip catalog data. */
+export function gradeFromScores(
   oshaScore: number,
   crimeIndex: number,
   nurseScore: number,

@@ -20,6 +20,7 @@ import type {
   SafetyRating,
   SeatSelection,
   TransitOption,
+  WorkOrder,
 } from '@/types';
 import { resolveWorkflowSteps } from '@/utils/booking';
 import { buildItinerarySummary } from '@/utils/itinerary';
@@ -39,6 +40,7 @@ interface TripState {
   activeStep: BookingWorkflowStep;
   contractStart: string | null;
   contractEnd: string | null;
+  workOrder: WorkOrder | null;
   selectHospital: (hospitalId: string) => void;
   selectLodging: (lodgingId: string | null) => void;
   selectFlight: (flightId: string | null) => void;
@@ -49,6 +51,7 @@ interface TripState {
   setHousingFirstEnabled: (enabled: boolean) => void;
   setActiveStep: (step: BookingWorkflowStep) => void;
   setContractDates: (start: string | null, end: string | null) => void;
+  setWorkOrder: (workOrder: WorkOrder | null) => void;
   reset: () => void;
 }
 
@@ -68,6 +71,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   activeStep: initialStep(true),
   contractStart: null,
   contractEnd: null,
+  workOrder: null,
   selectHospital: (hospitalId) =>
     set({
       selectedHospitalId: hospitalId,
@@ -94,6 +98,7 @@ export const useTripStore = create<TripState>((set, get) => ({
     set({ housingFirstEnabled, activeStep: initialStep(housingFirstEnabled) }),
   setActiveStep: (activeStep) => set({ activeStep }),
   setContractDates: (contractStart, contractEnd) => set({ contractStart, contractEnd }),
+  setWorkOrder: (workOrder) => set({ workOrder }),
   reset: () =>
     set({
       selectedHospitalId: null,
@@ -107,6 +112,7 @@ export const useTripStore = create<TripState>((set, get) => ({
       activeStep: initialStep(true),
       contractStart: null,
       contractEnd: null,
+      workOrder: null,
     }),
 }));
 

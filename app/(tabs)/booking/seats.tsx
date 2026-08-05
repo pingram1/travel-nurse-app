@@ -5,8 +5,9 @@ import { ScrollView, Text, View } from 'react-native';
 import { PlaneSeatMap3D } from '@/components/domain/PlaneSeatMap3D';
 import { Button, Card } from '@/components/ui';
 import { useTrip } from '@/hooks/useTrip';
-import { buildSeatMap, applySeatSelection, toSeatSelection } from '@/utils/seatMap';
+import { getNextStep, getStepRoute, resolveWorkflowSteps } from '@/utils/booking';
 import { formatCurrency } from '@/utils/currency';
+import { buildSeatMap, applySeatSelection, toSeatSelection } from '@/utils/seatMap';
 
 export default function SeatSelectionScreen() {
   const router = useRouter();
@@ -42,8 +43,11 @@ export default function SeatSelectionScreen() {
   const confirmSeat = () => {
     if (!draftSeat || draftSeat.status === 'occupied') return;
     trip.selectSeat(toSeatSelection(flight.id, draftSeat));
-    trip.setActiveStep('dining');
-    router.push('./dining');
+    const next = getNextStep(resolveWorkflowSteps(trip.housingFirstEnabled), 'seats');
+    if (!next) return;
+    trip.setActiveStep(next);
+    const route = getStepRoute(next);
+    if (route) router.push(route);
   };
 
   const seatLabel = draftSeat

@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useStipendStore } from '@/store/stipendStore';
 import type { LodgingOptionInput, PhysicalAddress, StipendCalculation } from '@/types';
 import { buildStipendCalculation } from '@/utils/stipend';
+import { stipendInputSchema } from '@/utils/validators';
 
 export interface UseStipendCalculatorResult extends StipendCalculation {
   setContractGrossPay: (amount: number) => void;
@@ -25,6 +26,12 @@ export function useStipendCalculator(): UseStipendCalculatorResult {
   } = input;
 
   const calculation = useMemo(() => {
+    stipendInputSchema.parse({
+      contractGrossPay: input.contractGrossPay,
+      dailyHousingStipendRate: input.dailyHousingStipendRate,
+      highlightTaxDeductibility: input.highlightTaxDeductibility,
+    });
+
     const { filteredLodgingOptions, estimatedTakeHome, subscriptionDeductibleNote } =
       buildStipendCalculation({
         contractGrossPay: input.contractGrossPay,

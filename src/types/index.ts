@@ -262,38 +262,3 @@ export interface TransitOption {
   appUrl: string;
   webUrl: string;
 }
-
-export interface BookingWorkflowState {
-  housingFirstEnabled: boolean;
-  workflowSteps: BookingWorkflowStep[];
-  activeStep: BookingWorkflowStep;
-  workOrder: WorkOrder | null;
-  selectedLodgingId: string | null;
-}
-
-/** @deprecated Use SafetyRating */
-export interface SafetyScore {
-  oshaRating: number;
-  crimeIndex: number;
-  overallGrade: SafetyRating['overallGrade'];
-  lastUpdated: string;
-}
-
-/** @deprecated Use SecureCredentialPayload */
-export interface CredentialDocument {
-  id: string;
-  type: 'BLS' | 'ACLS' | 'RN_LICENSE' | 'OTHER';
-  label: string;
-  expiresAt: string;
-  status: CredentialStatus;
-}
-
-/** @deprecated Use StipendCalculation */
-export interface StipendBreakdown {
-  grossPay: number;
-  housingStipend: number;
-  mealStipend: number;
-  travelReimbursement: number;
-  deductions: number;
-  takeHomePay: number;
-}

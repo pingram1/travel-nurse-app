@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { RestaurantCard } from '@/components/domain/RestaurantCard';
 import { Button, Card, SectionHeader } from '@/components/ui';
 import { useTrip } from '@/hooks/useTrip';
+import { getNextStep, getStepRoute, resolveWorkflowSteps } from '@/utils/booking';
 
 const RADIUS_MILES = 50;
 const ALL_CUISINES = 'All';
@@ -96,8 +97,11 @@ export default function DiningScreen() {
       <Button
         label="Continue to ground transit"
         onPress={() => {
-          trip.setActiveStep('transit');
-          router.push('./transit');
+          const next = getNextStep(resolveWorkflowSteps(trip.housingFirstEnabled), 'dining');
+          if (!next) return;
+          trip.setActiveStep(next);
+          const route = getStepRoute(next);
+          if (route) router.push(route);
         }}
       />
     </ScrollView>

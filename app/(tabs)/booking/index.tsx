@@ -9,10 +9,10 @@ import { HospitalSelectorCard } from '@/components/domain/HospitalSelectorCard';
 import { ItineraryDashboard } from '@/components/domain/ItineraryDashboard';
 import { LodgingCard } from '@/components/domain/LodgingCard';
 import { Badge, Button, Card, SectionHeader, Toggle } from '@/components/ui';
-import { useBooking } from '@/hooks/useBooking';
 import { useTrip } from '@/hooks/useTrip';
 import { extractWorkOrderFields } from '@/services/api/parserService';
 import type { BookingWorkflowStep, WorkOrder } from '@/types';
+import { getStepRoute } from '@/utils/booking';
 import { formatCurrency } from '@/utils/currency';
 import { formatShortDate } from '@/utils/datetime';
 import { generateRequestId } from '@/utils/uuid';
@@ -36,22 +36,13 @@ function resolveHospitalId(facilityName: string): string | null {
   return null;
 }
 
-const STEP_ROUTES: Partial<Record<BookingWorkflowStep, `./${string}`>> = {
-  dining: './dining',
-  transit: './transit',
-  cars: './cars',
-  review: './review',
-  seats: './seats',
-};
-
 export default function TripHubScreen() {
   const router = useRouter();
   const trip = useTrip();
-  const { workOrder, applyWorkOrder } = useBooking();
 
   useEffect(() => {
     const fields = extractWorkOrderFields(SAMPLE_WORK_ORDER);
-    if (!fields || workOrder) return;
+    if (!fields || trip.workOrder) return;
 
     const order: WorkOrder = {
       id: generateRequestId(),
@@ -63,7 +54,7 @@ export default function TripHubScreen() {
       parsedAt: new Date().toISOString(),
       status: 'parsed',
     };
-    applyWorkOrder(order);
+    trip.setWorkOrder(order);
     trip.setContractDates(fields.contractStartDate, fields.contractEndDate);
 
     const hospitalId = resolveHospitalId(fields.facilityName);
@@ -71,7 +62,7 @@ export default function TripHubScreen() {
       trip.selectHospital(hospitalId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applyWorkOrder, workOrder]);
+  }, [trip.workOrder]);
 
   const handleFlightSelect = (flightId: string) => {
     trip.selectFlight(flightId);
@@ -81,7 +72,7 @@ export default function TripHubScreen() {
 
   const handleStepPress = (step: BookingWorkflowStep) => {
     trip.setActiveStep(step);
-    const route = STEP_ROUTES[step];
+    const route = getStepRoute(step);
     if (route) router.push(route);
   };
 
@@ -151,14 +142,14 @@ export default function TripHubScreen() {
         <Text className="mt-1 text-sm text-medical-100">
           Flight, seat, lodging, food, rides, and car — one flow built for 13-week contracts.
         </Text>
-        {workOrder ? (
+        {trip.workOrder ? (
           <View className="mt-3 rounded-xl bg-medical-800/70 p-3">
             <Text className="text-sm font-semibold text-white">
-              Work order: {workOrder.facilityName}
+              Work order: {trip.workOrder.facilityName}
             </Text>
             <Text className="mt-0.5 text-xs text-medical-200">
-              Contract {formatShortDate(workOrder.contractStartDate)} —{' '}
-              {formatShortDate(workOrder.contractEndDate)}
+              Contract {formatShortDate(trip.workOrder.contractStartDate)} —{' '}
+              {formatShortDate(trip.workOrder.contractEndDate)}
             </Text>
           </View>
         ) : null}
