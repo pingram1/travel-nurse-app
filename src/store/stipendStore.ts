@@ -3,10 +3,10 @@ import { create } from 'zustand';
 import type { LodgingOptionInput, PhysicalAddress, StipendCalculationInput } from '@/types';
 
 const DEFAULT_TAX_HOME: PhysicalAddress = {
-  street: '',
-  city: '',
-  state: '',
-  zipCode: '',
+  street: '400 Main St',
+  city: 'Austin',
+  state: 'TX',
+  zipCode: '78701',
   country: 'US',
 };
 
@@ -19,10 +19,12 @@ interface StipendState extends StipendCalculationInput {
   reset: () => void;
 }
 
+// Realistic contract defaults so the app is interactive out of the box;
+// replaced by parsed work-order values in a full integration.
 const initialState: StipendCalculationInput = {
-  contractGrossPay: 0,
+  contractGrossPay: 3200,
   taxHomeAddress: DEFAULT_TAX_HOME,
-  dailyHousingStipendRate: 0,
+  dailyHousingStipendRate: 110,
   highlightTaxDeductibility: false,
   lodgingOptions: [],
 };

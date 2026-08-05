@@ -136,9 +136,132 @@ export interface StipendCalculation extends StipendCalculationInput {
   subscriptionDeductibleNote: string | null;
 }
 
-export type BookingWorkflowStep = 'housing' | 'flights' | 'transit' | 'review';
+export type BookingWorkflowStep =
+  'housing' | 'flights' | 'seats' | 'dining' | 'transit' | 'cars' | 'review';
 
 export type TransitProvider = 'uber' | 'lyft' | 'turo';
+
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
+}
+
+export interface Hospital {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  airportCode: string;
+  address: PhysicalAddress;
+  coordinates: GeoPoint;
+  safety: SafetyRating;
+}
+
+export interface LodgingListing {
+  id: string;
+  hospitalId: string;
+  name: string;
+  provider: LodgingProvider;
+  nightlyRate: number;
+  distanceMiles: number;
+  areaCrimeIndex: number;
+  guestRating: number;
+}
+
+export interface FlightOption {
+  id: string;
+  hospitalId: string;
+  airline: string;
+  flightNumber: string;
+  departureAirport: string;
+  arrivalAirport: string;
+  departureTime: string;
+  arrivalTime: string;
+  price: number;
+  nonstop: boolean;
+  aircraft: string;
+  cabinLayout: AirlineCabinLayout;
+}
+
+export type SeatClass = 'first' | 'premium' | 'economy';
+export type SeatStatus = 'available' | 'occupied' | 'selected';
+
+export interface SeatCell {
+  id: string;
+  row: number;
+  column: string;
+  seatClass: SeatClass;
+  status: SeatStatus;
+  price: number;
+  /** 0–1 depth for pseudo-3D rendering (nose = 0, tail = 1) */
+  depth: number;
+}
+
+export type AirlineCabinLayout = 'narrow-3-3' | 'southwest-open';
+
+export interface SeatSelection {
+  flightId: string;
+  seatId: string;
+  row: number;
+  column: string;
+  seatClass: SeatClass;
+  price: number;
+  label: string;
+}
+
+export interface CarRentalOption {
+  id: string;
+  hospitalId: string;
+  provider: 'turo' | 'enterprise' | 'hertz';
+  label: string;
+  vehicleClass: string;
+  dailyRate: number;
+  weeklyRate: number;
+  pickupLocation: string;
+  includesInsurance: boolean;
+  appUrl: string;
+  webUrl: string;
+}
+
+export interface ItinerarySummary {
+  facilityName: string;
+  contractDates: string | null;
+  lodging: { name: string; nightlyRate: number; totalNights: number } | null;
+  flight: {
+    airline: string;
+    flightNumber: string;
+    route: string;
+    price: number;
+    seat: SeatSelection | null;
+  } | null;
+  dining: { count: number; names: string[] };
+  groundTransit: { provider: string; label: string; estimatedCost: number } | null;
+  carRental: { provider: string; label: string; weeklyRate: number } | null;
+  estimatedTotal: number;
+  completionPercent: number;
+  isReadyToConfirm: boolean;
+}
+
+export interface Restaurant {
+  id: string;
+  hospitalId: string;
+  name: string;
+  cuisine: string;
+  distanceMiles: number;
+  priceLevel: 1 | 2 | 3;
+  rating: number;
+  openLate: boolean;
+}
+
+export interface TransitOption {
+  id: string;
+  provider: TransitProvider;
+  label: string;
+  etaMinutes: number;
+  estimatedCost: number;
+  appUrl: string;
+  webUrl: string;
+}
 
 export interface BookingWorkflowState {
   housingFirstEnabled: boolean;

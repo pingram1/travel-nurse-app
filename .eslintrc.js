@@ -51,6 +51,7 @@ module.exports = {
     '.expo/',
     'dist/',
     'coverage/',
+    'scripts/',
     'babel.config.js',
     'metro.config.js',
     'jest.config.js',

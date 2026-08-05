@@ -1,6 +1,6 @@
-import { Pressable, Text, type PressableProps } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends Omit<PressableProps, 'children'> {
@@ -11,23 +11,25 @@ export interface ButtonProps extends Omit<PressableProps, 'children'> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-brand-600 active:bg-brand-700',
-  secondary: 'bg-slate-200 active:bg-slate-300',
-  ghost: 'bg-transparent active:bg-slate-100',
-  danger: 'bg-red-600 active:bg-red-700',
+  primary: 'bg-medical-600 active:bg-medical-700 shadow-sm',
+  secondary: 'bg-medical-50 border border-medical-200 active:bg-medical-100',
+  ghost: 'bg-transparent active:bg-medical-50',
+  danger: 'bg-danger-600 active:bg-red-700 shadow-sm',
+  success: 'bg-clinical-600 active:bg-clinical-700 shadow-sm',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-2 min-h-[36px]',
-  md: 'px-4 py-3 min-h-[44px]',
-  lg: 'px-6 py-4 min-h-[48px]',
+  sm: 'px-3 py-2 min-h-[36px] rounded-lg',
+  md: 'px-4 py-3 min-h-[44px] rounded-xl',
+  lg: 'px-6 py-4 min-h-[52px] rounded-xl',
 };
 
 const textVariantClasses: Record<ButtonVariant, string> = {
   primary: 'text-white',
-  secondary: 'text-slate-900',
-  ghost: 'text-brand-600',
+  secondary: 'text-medical-700',
+  ghost: 'text-medical-600',
   danger: 'text-white',
+  success: 'text-white',
 };
 
 export function Button({
@@ -46,12 +48,22 @@ export function Button({
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled }}
       disabled={isDisabled}
-      className={`rounded-lg items-center justify-center ${variantClasses[variant]} ${sizeClasses[size]} ${isDisabled ? 'opacity-50' : ''} ${className ?? ''}`}
+      className={`flex-row items-center justify-center gap-2 ${variantClasses[variant]} ${sizeClasses[size]} ${isDisabled ? 'opacity-50' : ''} ${className ?? ''}`}
       {...props}
     >
-      <Text className={`font-semibold text-base ${textVariantClasses[variant]}`}>
-        {loading ? 'Loading…' : label}
-      </Text>
+      {loading ? (
+        <View className="flex-row items-center gap-2">
+          <ActivityIndicator
+            size="small"
+            color={variant === 'secondary' || variant === 'ghost' ? '#1c5a8d' : '#ffffff'}
+          />
+          <Text className={`text-base font-semibold ${textVariantClasses[variant]}`}>Loading…</Text>
+        </View>
+      ) : (
+        <Text className={`text-base font-semibold tracking-wide ${textVariantClasses[variant]}`}>
+          {label}
+        </Text>
+      )}
     </Pressable>
   );
 }

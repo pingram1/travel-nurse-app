@@ -269,10 +269,7 @@ function formatDateRange(): { start: string; end: string; generated: string } {
   };
 }
 
-function buildMarkdownReport(
-  config: ReportConfig,
-  commits: CategorizedCommit[],
-): string {
+function buildMarkdownReport(config: ReportConfig, commits: CategorizedCommit[]): string {
   const { start, end, generated } = formatDateRange();
   const grouped = new Map<FeatureCategory, CategorizedCommit[]>();
 
@@ -284,9 +281,7 @@ function buildMarkdownReport(
     grouped.get(commit.category)?.push(commit);
   }
 
-  const activeCategories = CATEGORY_ORDER.filter(
-    (cat) => (grouped.get(cat)?.length ?? 0) > 0,
-  );
+  const activeCategories = CATEGORY_ORDER.filter((cat) => (grouped.get(cat)?.length ?? 0) > 0);
 
   const lines: string[] = [
     `# Weekly Progress Report`,
@@ -347,10 +342,7 @@ function buildMarkdownReport(
 }
 
 function markdownToHtml(markdown: string): string {
-  const escaped = markdown
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  const escaped = markdown.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   return escaped
     .split('\n')
@@ -395,7 +387,11 @@ function markdownToHtml(markdown: string): string {
     })
     .join('\n')
     .replace(/(<li[^>]*>.*<\/li>\n?)+/g, (match) => `<ul style="padding-left:20px;">${match}</ul>`)
-    .replace(/(<tr>.*<\/tr>\n?)+/g, (match) => `<table style="width:100%;border-collapse:collapse;margin:12px 0;">${match}</table>`);
+    .replace(
+      /(<tr>.*<\/tr>\n?)+/g,
+      (match) =>
+        `<table style="width:100%;border-collapse:collapse;margin:12px 0;">${match}</table>`,
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -425,8 +421,7 @@ function loadConfig(): ReportConfig {
 
   return {
     clientName: process.env.REPORT_CLIENT_NAME ?? 'KR2 Group',
-    projectName:
-      process.env.REPORT_PROJECT_NAME ?? 'Travel Nurse Logistics & Safety App',
+    projectName: process.env.REPORT_PROJECT_NAME ?? 'Travel Nurse Logistics & Safety App',
     developerName: process.env.REPORT_DEVELOPER_NAME ?? 'Start Right Tutoring, LLC',
     reportClientEmail,
     reportCcEmails,

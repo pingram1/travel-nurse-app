@@ -37,9 +37,14 @@ export default function LoginScreen() {
   }
 
   return (
-    <View className="flex-1 justify-center bg-slate-50 px-6">
-      <Text className="mb-2 text-3xl font-bold text-slate-900">Travel Nurse App</Text>
-      <Text className="mb-8 text-base text-slate-600">Safety-first logistics for clinicians</Text>
+    <View className="flex-1 justify-center bg-surface-canvas px-6">
+      <View className="mb-8 items-center">
+        <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-medical-700">
+          <Text className="text-2xl font-bold text-white">+</Text>
+        </View>
+        <Text className="text-3xl font-bold tracking-tight text-medical-900">Travel Nurse</Text>
+        <Text className="mt-1 text-base text-slate-500">Safety-first logistics for clinicians</Text>
+      </View>
 
       <Card>
         <View className="gap-4">
@@ -55,7 +60,7 @@ export default function LoginScreen() {
         </View>
       </Card>
 
-      <Link href="/(auth)/onboarding" className="mt-6 text-center text-brand-600">
+      <Link href="/(auth)/onboarding" className="mt-6 text-center font-semibold text-medical-600">
         New here? Complete onboarding
       </Link>
     </View>

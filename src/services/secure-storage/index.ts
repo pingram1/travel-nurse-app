@@ -1,9 +1,9 @@
-import * as SecureStore from 'expo-secure-store';
+import * as platformStorage from './platformStorage';
 
 /**
  * Sensitive credential keys — NEVER persist these via AsyncStorage.
- * All session tokens, refresh tokens, MFA seeds, and passwords
- * must flow through this module only.
+ * Native: Keychain/Keystore via expo-secure-store.
+ * Web: sessionStorage fallback (SecureStore is unavailable on web).
  */
 export const SECURE_STORAGE_KEYS = {
   ACCESS_TOKEN: 'tn_access_token',
@@ -16,11 +16,13 @@ export type SecureStorageKey = (typeof SECURE_STORAGE_KEYS)[keyof typeof SECURE_
 
 export type DynamicSecureStorageKey = `tn_vault_${string}`;
 
+export type StorageKey = SecureStorageKey | DynamicSecureStorageKey;
+
 export class SecureStorageError extends Error {
   constructor(
     message: string,
     public readonly operation: 'get' | 'set' | 'delete',
-    public readonly key: SecureStorageKey,
+    public readonly key: StorageKey,
     public readonly cause?: unknown,
   ) {
     super(message);
@@ -28,13 +30,9 @@ export class SecureStorageError extends Error {
   }
 }
 
-const SECURE_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
-  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-};
-
 async function withErrorHandling<T>(
   operation: 'get' | 'set' | 'delete',
-  key: SecureStorageKey,
+  key: StorageKey,
   fn: () => Promise<T>,
 ): Promise<T> {
   try {
@@ -49,24 +47,16 @@ async function withErrorHandling<T>(
   }
 }
 
-type StorageKey = SecureStorageKey | DynamicSecureStorageKey;
-
 export async function getSecureItem(key: StorageKey): Promise<string | null> {
-  return withErrorHandling('get', key as SecureStorageKey, () =>
-    SecureStore.getItemAsync(key, SECURE_STORE_OPTIONS),
-  );
+  return withErrorHandling('get', key, () => platformStorage.readValue(key));
 }
 
 export async function setSecureItem(key: StorageKey, value: string): Promise<void> {
-  return withErrorHandling('set', key as SecureStorageKey, () =>
-    SecureStore.setItemAsync(key, value, SECURE_STORE_OPTIONS),
-  );
+  return withErrorHandling('set', key, () => platformStorage.writeValue(key, value));
 }
 
 export async function deleteSecureItem(key: StorageKey): Promise<void> {
-  return withErrorHandling('delete', key as SecureStorageKey, () =>
-    SecureStore.deleteItemAsync(key, SECURE_STORE_OPTIONS),
-  );
+  return withErrorHandling('delete', key, () => platformStorage.removeValue(key));
 }
 
 export async function clearAuthCredentials(): Promise<void> {
