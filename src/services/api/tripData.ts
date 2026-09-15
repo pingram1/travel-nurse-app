@@ -1,495 +1,120 @@
-import { gradeFromScores } from '@/services/api/safetyService';
-import type {
-  CarRentalOption,
-  FlightOption,
-  Hospital,
-  LodgingListing,
-  Restaurant,
-  SafetyRating,
-  TransitOption,
-} from '@/types';
+import type { CarRentalOption, GeoPoint, LodgingListing, TransitOption } from '@/types';
 
-function rating(
-  facilityId: string,
-  facilityName: string,
-  oshaScore: number,
-  crimeIndex: number,
-  nurseScore: number,
-  reviewCount: number,
-): SafetyRating {
-  const now = new Date().toISOString();
-  return {
-    facilityId,
-    facilityName,
-    osha: {
-      facilityId,
-      facilityName,
-      oshaComplianceScore: oshaScore,
-      source: 'BLS',
-      retrievedAt: now,
-    },
-    residential: {
-      areaCode: facilityId,
-      jurisdiction: facilityName,
-      crimeIndex,
-      source: 'NIBRS',
-      retrievedAt: now,
-    },
-    nurseVerified: {
-      averageScore: nurseScore,
-      reviewCount,
-      lastSubmittedAt: now,
-      verifiedByRole: ['nurse', 'physician'],
-    },
-    overallGrade: gradeFromScores(oshaScore, crimeIndex, nurseScore),
-    lastUpdated: now,
-  };
+/**
+ * Location-derived ancillary catalogs (cars, transit).
+ * Hospitals, lodging, dining, and flights are loaded via dedicated API services.
+ */
+
+export interface CarRentalAnchor {
+  id: string;
+  airportCode: string;
 }
 
-export const HOSPITALS: Hospital[] = [
-  {
-    id: 'mercy-portland',
-    name: 'Mercy General Hospital',
-    city: 'Portland',
-    state: 'OR',
-    airportCode: 'PDX',
-    address: {
-      street: '1200 Oak Street',
-      city: 'Portland',
-      state: 'OR',
-      zipCode: '97201',
-      country: 'US',
-    },
-    coordinates: { latitude: 45.5152, longitude: -122.6784 },
-    safety: rating('mercy-portland', 'Mercy General Hospital', 94, 24, 4.6, 42),
-  },
-  {
-    id: 'stlukes-houston',
-    name: "St. Luke's Medical Center",
-    city: 'Houston',
-    state: 'TX',
-    airportCode: 'IAH',
-    address: {
-      street: '6720 Bertner Avenue',
-      city: 'Houston',
-      state: 'TX',
-      zipCode: '77030',
-      country: 'US',
-    },
-    coordinates: { latitude: 29.7079, longitude: -95.3995 },
-    safety: rating('stlukes-houston', "St. Luke's Medical Center", 88, 41, 4.1, 67),
-  },
-  {
-    id: 'unity-chicago',
-    name: 'Unity Point Medical Center',
-    city: 'Chicago',
-    state: 'IL',
-    airportCode: 'ORD',
-    address: {
-      street: '836 W Wellington Avenue',
-      city: 'Chicago',
-      state: 'IL',
-      zipCode: '60657',
-      country: 'US',
-    },
-    coordinates: { latitude: 41.936, longitude: -87.6533 },
-    safety: rating('unity-chicago', 'Unity Point Medical Center', 79, 58, 3.7, 51),
-  },
-];
+/** Peer-to-peer + agency rentals near the destination arrival airport. */
+export function buildCarRentalsForHospital(anchor: CarRentalAnchor): CarRentalOption[] {
+  const airport = anchor.airportCode;
+  const airportPickup = `${airport} Airport`;
+  const rccPickup = `${airport} Rental Car Center`;
 
-export const LODGING: LodgingListing[] = [
-  {
-    id: 'pdx-l1',
-    hospitalId: 'mercy-portland',
-    name: 'Riverside Extended Stay',
-    provider: 'hotel',
-    nightlyRate: 92,
-    distanceMiles: 1.4,
-    areaCrimeIndex: 22,
-    guestRating: 4.5,
-  },
-  {
-    id: 'pdx-l2',
-    hospitalId: 'mercy-portland',
-    name: 'Pearl District Loft',
-    provider: 'airbnb',
-    nightlyRate: 118,
-    distanceMiles: 2.1,
-    areaCrimeIndex: 28,
-    guestRating: 4.8,
-  },
-  {
-    id: 'pdx-l3',
-    hospitalId: 'mercy-portland',
-    name: 'Nurse Housing Co-op NW',
-    provider: 'airbnb',
-    nightlyRate: 78,
-    distanceMiles: 3.2,
-    areaCrimeIndex: 19,
-    guestRating: 4.6,
-  },
-  {
-    id: 'iah-l1',
-    hospitalId: 'stlukes-houston',
-    name: 'Medical Center Marriott',
-    provider: 'hotel',
-    nightlyRate: 129,
-    distanceMiles: 0.6,
-    areaCrimeIndex: 38,
-    guestRating: 4.3,
-  },
-  {
-    id: 'iah-l2',
-    hospitalId: 'stlukes-houston',
-    name: 'Museum District Casita',
-    provider: 'airbnb',
-    nightlyRate: 96,
-    distanceMiles: 1.9,
-    areaCrimeIndex: 35,
-    guestRating: 4.7,
-  },
-  {
-    id: 'iah-l3',
-    hospitalId: 'stlukes-houston',
-    name: 'Midtown Budget Suites',
-    provider: 'hotel',
-    nightlyRate: 74,
-    distanceMiles: 3.8,
-    areaCrimeIndex: 62,
-    guestRating: 3.9,
-  },
-  {
-    id: 'ord-l1',
-    hospitalId: 'unity-chicago',
-    name: 'Lakeview Residence Inn',
-    provider: 'hotel',
-    nightlyRate: 142,
-    distanceMiles: 0.9,
-    areaCrimeIndex: 44,
-    guestRating: 4.4,
-  },
-  {
-    id: 'ord-l2',
-    hospitalId: 'unity-chicago',
-    name: 'Wrigleyville Walk-up',
-    provider: 'airbnb',
-    nightlyRate: 104,
-    distanceMiles: 1.6,
-    areaCrimeIndex: 51,
-    guestRating: 4.5,
-  },
-  {
-    id: 'ord-l3',
-    hospitalId: 'unity-chicago',
-    name: 'South Loop Studio',
-    provider: 'airbnb',
-    nightlyRate: 88,
-    distanceMiles: 6.4,
-    areaCrimeIndex: 66,
-    guestRating: 4.1,
-  },
-];
+  const turoVehicles: Array<{
+    slug: string;
+    label: string;
+    vehicleClass: string;
+    dailyRate: number;
+    weeklyRate: number;
+  }> = [
+    {
+      slug: 'sedan',
+      label: 'Turo Sedan',
+      vehicleClass: 'Sedan',
+      dailyRate: 42,
+      weeklyRate: 245,
+    },
+    {
+      slug: 'compact-suv',
+      label: 'Turo Compact SUV',
+      vehicleClass: 'SUV',
+      dailyRate: 48,
+      weeklyRate: 266,
+    },
+    {
+      slug: 'full-suv',
+      label: 'Turo Full-Size SUV',
+      vehicleClass: 'SUV',
+      dailyRate: 62,
+      weeklyRate: 335,
+    },
+    {
+      slug: 'truck',
+      label: 'Turo Pickup Truck',
+      vehicleClass: 'Truck',
+      dailyRate: 58,
+      weeklyRate: 318,
+    },
+    {
+      slug: 'minivan',
+      label: 'Turo Minivan',
+      vehicleClass: 'Minivan',
+      dailyRate: 55,
+      weeklyRate: 299,
+    },
+  ];
 
-export const FLIGHTS: FlightOption[] = [
-  {
-    id: 'f-pdx-1',
-    hospitalId: 'mercy-portland',
-    airline: 'Alaska',
-    flightNumber: 'AS 512',
-    departureAirport: 'AUS',
-    arrivalAirport: 'PDX',
-    departureTime: '2026-08-01T08:15:00Z',
-    arrivalTime: '2026-08-01T12:40:00Z',
-    price: 248,
-    nonstop: true,
-    aircraft: 'Boeing 737-900',
-    cabinLayout: 'narrow-3-3',
-  },
-  {
-    id: 'f-pdx-2',
-    hospitalId: 'mercy-portland',
-    airline: 'Delta',
-    flightNumber: 'DL 1189',
-    departureAirport: 'AUS',
-    arrivalAirport: 'PDX',
-    departureTime: '2026-08-01T13:05:00Z',
-    arrivalTime: '2026-08-01T18:22:00Z',
-    price: 197,
-    nonstop: false,
-    aircraft: 'Airbus A321',
-    cabinLayout: 'narrow-3-3',
-  },
-  {
-    id: 'f-iah-1',
-    hospitalId: 'stlukes-houston',
-    airline: 'United',
-    flightNumber: 'UA 2204',
-    departureAirport: 'AUS',
-    arrivalAirport: 'IAH',
-    departureTime: '2026-08-01T09:30:00Z',
-    arrivalTime: '2026-08-01T10:35:00Z',
-    price: 132,
-    nonstop: true,
-    aircraft: 'Boeing 737-800',
-    cabinLayout: 'narrow-3-3',
-  },
-  {
-    id: 'f-iah-2',
-    hospitalId: 'stlukes-houston',
-    airline: 'Southwest',
-    flightNumber: 'WN 881',
-    departureAirport: 'AUS',
-    arrivalAirport: 'HOU',
-    departureTime: '2026-08-01T15:45:00Z',
-    arrivalTime: '2026-08-01T16:50:00Z',
-    price: 109,
-    nonstop: true,
-    aircraft: 'Boeing 737-700',
-    cabinLayout: 'southwest-open',
-  },
-  {
-    id: 'f-ord-1',
-    hospitalId: 'unity-chicago',
-    airline: 'American',
-    flightNumber: 'AA 344',
-    departureAirport: 'AUS',
-    arrivalAirport: 'ORD',
-    departureTime: '2026-08-01T07:00:00Z',
-    arrivalTime: '2026-08-01T09:45:00Z',
-    price: 186,
-    nonstop: true,
-    aircraft: 'Boeing 737 MAX 8',
-    cabinLayout: 'narrow-3-3',
-  },
-  {
-    id: 'f-ord-2',
-    hospitalId: 'unity-chicago',
-    airline: 'United',
-    flightNumber: 'UA 619',
-    departureAirport: 'AUS',
-    arrivalAirport: 'ORD',
-    departureTime: '2026-08-01T17:20:00Z',
-    arrivalTime: '2026-08-01T20:05:00Z',
-    price: 164,
-    nonstop: true,
-    aircraft: 'Airbus A320',
-    cabinLayout: 'narrow-3-3',
-  },
-];
-
-export const CAR_RENTALS: CarRentalOption[] = [
-  {
-    id: 'car-pdx-turo',
-    hospitalId: 'mercy-portland',
+  const turoOptions: CarRentalOption[] = turoVehicles.map((vehicle) => ({
+    id: `car-${anchor.id}-turo-${vehicle.slug}`,
+    hospitalId: anchor.id,
     provider: 'turo',
-    label: 'Turo Compact SUV',
-    vehicleClass: 'SUV',
-    dailyRate: 48,
-    weeklyRate: 266,
-    pickupLocation: 'PDX Airport',
+    label: vehicle.label,
+    vehicleClass: vehicle.vehicleClass,
+    dailyRate: vehicle.dailyRate,
+    weeklyRate: vehicle.weeklyRate,
+    pickupLocation: airportPickup,
     includesInsurance: false,
     appUrl: 'turo://',
-    webUrl: 'https://turo.com/us/en/search?location=PDX',
-  },
-  {
-    id: 'car-pdx-enterprise',
-    hospitalId: 'mercy-portland',
-    provider: 'enterprise',
-    label: 'Enterprise Midsize',
-    vehicleClass: 'Midsize',
-    dailyRate: 52,
-    weeklyRate: 289,
-    pickupLocation: 'PDX Rental Car Center',
-    includesInsurance: true,
-    appUrl: 'enterprise://',
-    webUrl: 'https://www.enterprise.com',
-  },
-  {
-    id: 'car-iah-turo',
-    hospitalId: 'stlukes-houston',
-    provider: 'turo',
-    label: 'Turo Sedan',
-    vehicleClass: 'Sedan',
-    dailyRate: 42,
-    weeklyRate: 245,
-    pickupLocation: 'IAH Terminal C',
-    includesInsurance: false,
-    appUrl: 'turo://',
-    webUrl: 'https://turo.com/us/en/search?location=IAH',
-  },
-  {
-    id: 'car-iah-hertz',
-    hospitalId: 'stlukes-houston',
-    provider: 'hertz',
-    label: 'Hertz Full-Size',
-    vehicleClass: 'Full-Size',
-    dailyRate: 58,
-    weeklyRate: 312,
-    pickupLocation: 'IAH Rental Car Center',
-    includesInsurance: true,
-    appUrl: 'hertz://',
-    webUrl: 'https://www.hertz.com',
-  },
-  {
-    id: 'car-ord-enterprise',
-    hospitalId: 'unity-chicago',
-    provider: 'enterprise',
-    label: 'Enterprise Compact',
-    vehicleClass: 'Compact',
-    dailyRate: 49,
-    weeklyRate: 275,
-    pickupLocation: 'ORD Terminal 1',
-    includesInsurance: true,
-    appUrl: 'enterprise://',
-    webUrl: 'https://www.enterprise.com',
-  },
-  {
-    id: 'car-ord-hertz',
-    hospitalId: 'unity-chicago',
-    provider: 'hertz',
-    label: 'Hertz SUV',
-    vehicleClass: 'SUV',
-    dailyRate: 61,
-    weeklyRate: 335,
-    pickupLocation: 'ORD Rental Car Center',
-    includesInsurance: true,
-    appUrl: 'hertz://',
-    webUrl: 'https://www.hertz.com',
-  },
-];
+    webUrl: `https://turo.com/us/en/search?location=${encodeURIComponent(airportPickup)}&makeModel=${encodeURIComponent(vehicle.vehicleClass)}`,
+  }));
 
-export const RESTAURANTS: Restaurant[] = [
-  {
-    id: 'r-pdx-1',
-    hospitalId: 'mercy-portland',
-    name: 'Verdant Bowl',
-    cuisine: 'Healthy / Salads',
-    distanceMiles: 0.4,
-    priceLevel: 2,
-    rating: 4.7,
-    openLate: false,
-  },
-  {
-    id: 'r-pdx-2',
-    hospitalId: 'mercy-portland',
-    name: 'Night Shift Pho',
-    cuisine: 'Vietnamese',
-    distanceMiles: 1.1,
-    priceLevel: 1,
-    rating: 4.5,
-    openLate: true,
-  },
-  {
-    id: 'r-pdx-3',
-    hospitalId: 'mercy-portland',
-    name: 'Hawthorne Tavern',
-    cuisine: 'American',
-    distanceMiles: 2.7,
-    priceLevel: 2,
-    rating: 4.3,
-    openLate: true,
-  },
-  {
-    id: 'r-pdx-4',
-    hospitalId: 'mercy-portland',
-    name: 'Cascade Coffee Lab',
-    cuisine: 'Café / Breakfast',
-    distanceMiles: 0.8,
-    priceLevel: 1,
-    rating: 4.8,
-    openLate: false,
-  },
-  {
-    id: 'r-iah-1',
-    hospitalId: 'stlukes-houston',
-    name: 'Bayou Bites',
-    cuisine: 'Cajun',
-    distanceMiles: 1.3,
-    priceLevel: 2,
-    rating: 4.6,
-    openLate: true,
-  },
-  {
-    id: 'r-iah-2',
-    hospitalId: 'stlukes-houston',
-    name: 'Med Center Mediterranean',
-    cuisine: 'Mediterranean',
-    distanceMiles: 0.5,
-    priceLevel: 2,
-    rating: 4.4,
-    openLate: false,
-  },
-  {
-    id: 'r-iah-3',
-    hospitalId: 'stlukes-houston',
-    name: 'Taquería La Esquina',
-    cuisine: 'Mexican',
-    distanceMiles: 2.2,
-    priceLevel: 1,
-    rating: 4.7,
-    openLate: true,
-  },
-  {
-    id: 'r-ord-1',
-    hospitalId: 'unity-chicago',
-    name: 'Deep Dish Division',
-    cuisine: 'Pizza',
-    distanceMiles: 1.0,
-    priceLevel: 2,
-    rating: 4.5,
-    openLate: true,
-  },
-  {
-    id: 'r-ord-2',
-    hospitalId: 'unity-chicago',
-    name: 'Lakeview Ramen House',
-    cuisine: 'Japanese',
-    distanceMiles: 0.7,
-    priceLevel: 2,
-    rating: 4.6,
-    openLate: true,
-  },
-  {
-    id: 'r-ord-3',
-    hospitalId: 'unity-chicago',
-    name: 'Green Fork',
-    cuisine: 'Healthy / Salads',
-    distanceMiles: 1.8,
-    priceLevel: 2,
-    rating: 4.4,
-    openLate: false,
-  },
-];
-
-export function getHospitalById(id: string): Hospital | null {
-  return HOSPITALS.find((h) => h.id === id) ?? null;
+  return [
+    ...turoOptions,
+    {
+      id: `car-${anchor.id}-enterprise`,
+      hospitalId: anchor.id,
+      provider: 'enterprise',
+      label: 'Enterprise Midsize',
+      vehicleClass: 'Midsize',
+      dailyRate: 52,
+      weeklyRate: 289,
+      pickupLocation: rccPickup,
+      includesInsurance: true,
+      appUrl: 'enterprise://',
+      webUrl: `https://www.enterprise.com/en/car-rental-locations/us.html?search=${airport}`,
+    },
+    {
+      id: `car-${anchor.id}-hertz`,
+      hospitalId: anchor.id,
+      provider: 'hertz',
+      label: 'Hertz Full-Size',
+      vehicleClass: 'Full-Size',
+      dailyRate: 58,
+      weeklyRate: 312,
+      pickupLocation: rccPickup,
+      includesInsurance: true,
+      appUrl: 'hertz://',
+      webUrl: `https://www.hertz.com/rentacar/reservation/?airportCode=${airport}`,
+    },
+  ];
 }
 
-export function getLodgingForHospital(hospitalId: string): LodgingListing[] {
-  return LODGING.filter((l) => l.hospitalId === hospitalId);
-}
-
-export function getFlightsForHospital(hospitalId: string): FlightOption[] {
-  return FLIGHTS.filter((f) => f.hospitalId === hospitalId);
-}
-
-export function getCarRentalsForHospital(hospitalId: string): CarRentalOption[] {
-  return CAR_RENTALS.filter((c) => c.hospitalId === hospitalId);
-}
-
-export function getRestaurantsNearHospital(hospitalId: string, radiusMiles = 50): Restaurant[] {
-  return RESTAURANTS.filter(
-    (r) => r.hospitalId === hospitalId && r.distanceMiles <= radiusMiles,
-  ).sort((a, b) => a.distanceMiles - b.distanceMiles);
-}
-
+/** Ride-share only — Turo belongs under car rental. */
 export function buildTransitOptions(
   lodging: LodgingListing | null,
   arrivalTime: string | null,
+  hospitalCoordinates?: GeoPoint | null,
 ): TransitOption[] {
   const distance = lodging?.distanceMiles ?? 8;
   const airportToLodgingMiles = 12 + distance;
   const surge = arrivalTime && new Date(arrivalTime).getUTCHours() >= 17 ? 1.25 : 1;
+  void hospitalCoordinates;
 
   return [
     {
@@ -509,15 +134,6 @@ export function buildTransitOptions(
       estimatedCost: Math.round(airportToLodgingMiles * 1.95 * surge),
       appUrl: 'lyft://ridetype?id=lyft',
       webUrl: 'https://www.lyft.com/rider',
-    },
-    {
-      id: 'transit-turo',
-      provider: 'turo',
-      label: 'Turo — weekly car rental',
-      etaMinutes: 45,
-      estimatedCost: Math.round(38 * 7),
-      appUrl: 'turo://',
-      webUrl: 'https://turo.com',
     },
   ];
 }

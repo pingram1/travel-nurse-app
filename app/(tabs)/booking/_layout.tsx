@@ -13,11 +13,14 @@ export default function BookingStackLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Trip Hub' }} />
-      <Stack.Screen name="seats" options={{ title: 'Select Seat' }} />
-      <Stack.Screen name="dining" options={{ title: 'Food Finder' }} />
-      <Stack.Screen name="transit" options={{ title: 'Ground Transit' }} />
-      <Stack.Screen name="cars" options={{ title: 'Car Rental' }} />
+      <Stack.Screen name="seats" options={{ title: 'Seat Locator' }} />
+      <Stack.Screen name="dining" options={{ title: 'City Finder' }} />
+      <Stack.Screen name="ground" options={{ title: 'Ground Transportation' }} />
+      <Stack.Screen name="boarding-pass" options={{ title: 'Boarding Pass' }} />
       <Stack.Screen name="review" options={{ title: 'Itinerary Summary' }} />
+      {/* Legacy aliases redirect to ground */}
+      <Stack.Screen name="transit" options={{ title: 'Ground Transportation' }} />
+      <Stack.Screen name="cars" options={{ title: 'Ground Transportation' }} />
     </Stack>
   );
 }

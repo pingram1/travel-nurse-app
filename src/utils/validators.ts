@@ -88,7 +88,23 @@ export const stipendInputSchema = z.object({
   highlightTaxDeductibility: z.boolean(),
 });
 
+export const profileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: emailSchema,
+  phone: z.string().optional(),
+});
+
+export const paymentMethodSchema = z.object({
+  brand: z.string().min(1, 'Card brand is required'),
+  last4: z.string().regex(/^\d{4}$/, 'Enter the last 4 digits'),
+  expMonth: z.coerce.number().int().min(1).max(12),
+  expYear: z.coerce.number().int().min(2026),
+});
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type StipendInputValues = z.infer<typeof stipendInputSchema>;
+export type ProfileFormValues = z.infer<typeof profileSchema>;
+export type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>;
 export type WorkOrderFieldsValues = z.infer<typeof workOrderFieldsSchema>;
 export type ParseWorkOrderRequestValues = z.infer<typeof parseWorkOrderRequestSchema>;

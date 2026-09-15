@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 
-import { Badge } from '@/components/ui';
+import { Badge, Button, PressableScale } from '@/components/ui';
+import { COLORS, SHADOWS } from '@/constants/theme';
 import type { CarRentalOption } from '@/types';
 import { formatCurrency } from '@/utils/currency';
 
@@ -27,19 +28,26 @@ async function openRental(rental: CarRentalOption): Promise<void> {
 
 export function CarRentalCard({ rental, selected, onSelect }: CarRentalCardProps) {
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={() => onSelect(rental.id)}
-      className={`min-h-[44px] rounded-2xl border-2 p-4 ${
-        selected
-          ? 'border-clinical-600 bg-clinical-50'
-          : 'border-slate-200 bg-white active:bg-slate-50'
+      className={`rounded-3xl border-2 p-4 ${
+        selected ? 'border-clinical-600 bg-clinical-50' : 'border-transparent bg-white'
       }`}
+      style={selected ? SHADOWS.card : SHADOWS.soft}
     >
       <View className="flex-row items-center gap-3">
-        <View className="h-11 w-11 items-center justify-center rounded-xl bg-slate-100">
-          <Ionicons name={providerIcon[rental.provider]} size={22} color="#1c5a8d" />
+        <View
+          className={`h-12 w-12 items-center justify-center rounded-2xl ${
+            selected ? 'bg-clinical-600' : 'bg-medical-100'
+          }`}
+        >
+          <Ionicons
+            name={providerIcon[rental.provider]}
+            size={22}
+            color={selected ? '#ffffff' : COLORS.medical[600]}
+          />
         </View>
         <View className="flex-1">
           <Text className="text-base font-bold text-slate-900">{rental.label}</Text>
@@ -62,14 +70,15 @@ export function CarRentalCard({ rental, selected, onSelect }: CarRentalCardProps
         {selected ? <Badge label="Selected for itinerary" tone="success" /> : null}
       </View>
       {selected ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void openRental(rental)}
-          className="mt-3 min-h-[44px] items-center justify-center rounded-xl bg-medical-600 px-4 py-3 active:bg-medical-700"
-        >
-          <Text className="text-base font-semibold text-white">Open {rental.provider}</Text>
-        </Pressable>
+        <View className="mt-3">
+          <Button
+            label={`Open ${rental.provider}`}
+            variant="soft"
+            size="sm"
+            onPress={() => void openRental(rental)}
+          />
+        </View>
       ) : null}
-    </Pressable>
+    </PressableScale>
   );
 }

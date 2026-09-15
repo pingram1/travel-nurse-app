@@ -1,6 +1,5 @@
 import type { ItinerarySummary, SeatSelection } from '@/types';
-
-const CONTRACT_NIGHTS = 92;
+import { countLodgingNights } from '@/utils/datetime';
 
 export interface ItineraryInput {
   facilityName: string | null;
@@ -14,6 +13,7 @@ export interface ItineraryInput {
   flightPrice: number | null;
   seat: SeatSelection | null;
   restaurantNames: string[];
+  entertainmentNames: string[];
   transitProvider: string | null;
   transitLabel: string | null;
   transitCost: number | null;
@@ -23,8 +23,9 @@ export interface ItineraryInput {
 }
 
 export function buildItinerarySummary(input: ItineraryInput): ItinerarySummary {
+  const totalNights = countLodgingNights(input.contractStart, input.contractEnd);
   const lodgingTotal =
-    input.lodgingNightlyRate !== null ? input.lodgingNightlyRate * CONTRACT_NIGHTS : 0;
+    input.lodgingNightlyRate !== null ? input.lodgingNightlyRate * totalNights : 0;
   const flightTotal = (input.flightPrice ?? 0) + (input.seat?.price ?? 0);
   const transitTotal = input.transitCost ?? 0;
   const carTotal = input.carWeeklyRate ?? 0;
@@ -34,26 +35,21 @@ export function buildItinerarySummary(input: ItineraryInput): ItinerarySummary {
       ? `${input.contractStart.slice(0, 10)} — ${input.contractEnd.slice(0, 10)}`
       : null;
 
-  const checks = [
-    Boolean(input.facilityName),
-    Boolean(input.lodgingName),
-    Boolean(input.flightAirline),
-    Boolean(input.seat),
-    input.restaurantNames.length > 0,
-    Boolean(input.transitProvider),
-    Boolean(input.carProvider),
-  ];
-  const completed = checks.filter(Boolean).length;
-  const completionPercent = Math.round((completed / checks.length) * 100);
+  const hasGround = Boolean(input.transitProvider || input.carProvider);
+
+  // Facility, flight, and seat are optional. Seat is a flight detail, not its own step.
+  const requiredChecks = [Boolean(input.lodgingName), input.restaurantNames.length > 0, hasGround];
+  const requiredDone = requiredChecks.filter(Boolean).length;
+  const completionPercent = Math.round((requiredDone / requiredChecks.length) * 100);
 
   return {
-    facilityName: input.facilityName ?? 'Assignment pending',
+    facilityName: input.facilityName ?? 'No facility selected',
     contractDates,
     lodging: input.lodgingName
       ? {
           name: input.lodgingName,
           nightlyRate: input.lodgingNightlyRate ?? 0,
-          totalNights: CONTRACT_NIGHTS,
+          totalNights,
         }
       : null,
     flight: input.flightAirline
@@ -66,22 +62,28 @@ export function buildItinerarySummary(input: ItineraryInput): ItinerarySummary {
         }
       : null,
     dining: { count: input.restaurantNames.length, names: input.restaurantNames },
-    groundTransit: input.transitProvider
-      ? {
-          provider: input.transitProvider,
-          label: input.transitLabel ?? input.transitProvider,
-          estimatedCost: transitTotal,
-        }
-      : null,
-    carRental: input.carProvider
-      ? {
-          provider: input.carProvider,
-          label: input.carLabel ?? input.carProvider,
-          weeklyRate: carTotal,
-        }
-      : null,
+    entertainment: {
+      count: input.entertainmentNames.length,
+      names: input.entertainmentNames,
+    },
+    groundTransit: {
+      rideTransport: input.transitProvider
+        ? {
+            provider: input.transitProvider,
+            label: input.transitLabel ?? input.transitProvider,
+            estimatedCost: transitTotal,
+          }
+        : null,
+      carRental: input.carProvider
+        ? {
+            provider: input.carProvider,
+            label: input.carLabel ?? input.carProvider,
+            weeklyRate: carTotal,
+          }
+        : null,
+    },
     estimatedTotal: lodgingTotal + flightTotal + transitTotal + carTotal,
     completionPercent,
-    isReadyToConfirm: completed >= 5,
+    isReadyToConfirm: requiredDone === requiredChecks.length,
   };
 }

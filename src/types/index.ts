@@ -4,6 +4,17 @@ export type UserRole = 'nurse' | 'physician' | 'admin' | 'hr';
 
 export type VaultPermission = 'vault:read' | 'vault:write' | 'vault:delete' | 'vault:export';
 
+export type SubscriptionPlanId = 'monthly' | 'semiannual' | 'annual';
+
+export type SubscriptionStatus = 'none' | 'active' | 'canceled';
+
+export interface PaymentMethodSummary {
+  brand: string;
+  last4: string;
+  expMonth: number;
+  expYear: number;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -12,6 +23,11 @@ export interface User {
   role: UserRole;
   credentialsVerified: boolean;
   permissions: VaultPermission[];
+  phone?: string;
+  avatarUri?: string | null;
+  subscriptionPlanId?: SubscriptionPlanId | null;
+  subscriptionStatus?: SubscriptionStatus;
+  paymentMethod?: PaymentMethodSummary | null;
 }
 
 export interface AuthSession {
@@ -136,14 +152,53 @@ export interface StipendCalculation extends StipendCalculationInput {
   subscriptionDeductibleNote: string | null;
 }
 
-export type BookingWorkflowStep =
-  'housing' | 'flights' | 'seats' | 'dining' | 'transit' | 'cars' | 'review';
+export type BookingWorkflowStep = 'housing' | 'flights' | 'seats' | 'dining' | 'ground' | 'review';
 
-export type TransitProvider = 'uber' | 'lyft' | 'turo';
+export type TripMode = 'planning' | 'travel';
+
+export type RentalPhotoKind = 'before' | 'after' | 'fuel' | 'insurance' | 'other';
+
+export interface RentalLogEntry {
+  id: string;
+  recordedAt: string;
+  odometerMiles: number | null;
+  fuelLevel: string | null;
+  notes: string | null;
+  photoKind: RentalPhotoKind;
+  photoUri: string | null;
+}
+
+export interface RentalLog {
+  startMileage: number | null;
+  endMileage: number | null;
+  insuranceOnFile: boolean;
+  insurancePhotoUri: string | null;
+  entries: RentalLogEntry[];
+}
+
+export interface RideShareLogEntry {
+  id: string;
+  recordedAt: string;
+  screenshotUri: string;
+  notes: string | null;
+}
+
+export type TransitProvider = 'uber' | 'lyft';
 
 export interface GeoPoint {
   latitude: number;
   longitude: number;
+}
+
+/** City or facility anchor used when a hospital is optional. */
+export interface TripDestination {
+  id: string;
+  label: string;
+  city: string;
+  state: string;
+  airportCode: string;
+  coordinates: GeoPoint;
+  source: 'facility' | 'city';
 }
 
 export interface Hospital {
@@ -157,6 +212,19 @@ export interface Hospital {
   safety: SafetyRating;
 }
 
+/** Opaque area preference from backend safety ranking — never exposes raw crime indices. */
+export type LodgingSafetyPreference = 'preferred' | 'standard' | 'caution';
+
+export interface LodgingSafetyContext {
+  areaCrimeIndex: number;
+  preference: LodgingSafetyPreference;
+  distanceMiles: number;
+  guestRating: number;
+  compositeScore: number;
+  weights: { crime: number; proximity: number; rating: number };
+  summary: string;
+}
+
 export interface LodgingListing {
   id: string;
   hospitalId: string;
@@ -164,14 +232,40 @@ export interface LodgingListing {
   provider: LodgingProvider;
   nightlyRate: number;
   distanceMiles: number;
-  areaCrimeIndex: number;
   guestRating: number;
+  safetyPreference: LodgingSafetyPreference;
+  coordinates?: GeoPoint;
+  placeId?: string;
+  vicinity?: string;
+  /** Deep link (Airbnb app / Maps). Booking completes externally. */
+  bookingAppUrl?: string;
+  /** Hotel site, Airbnb web, or Maps — booking completes externally. */
+  bookingWebUrl?: string;
+  /** Rank reasoning — UI shows this only for Pro subscribers. */
+  safetyContext?: LodgingSafetyContext;
+}
+
+export interface LodgingSearchParams {
+  hospitalId: string;
+  coordinates: GeoPoint;
+  radiusMiles?: number;
+}
+
+export interface FlightSearchParams {
+  hospitalId: string;
+  originAirport: string;
+  destinationAirport: string;
+  /** Inclusive ISO date (YYYY-MM-DD) — typically contract start. */
+  departureDateStart: string;
+  /** Inclusive ISO date (YYYY-MM-DD) — search window end (contract start + buffer or end). */
+  departureDateEnd: string;
 }
 
 export interface FlightOption {
   id: string;
   hospitalId: string;
   airline: string;
+  airlineCode: string;
   flightNumber: string;
   departureAirport: string;
   arrivalAirport: string;
@@ -181,6 +275,30 @@ export interface FlightOption {
   nonstop: boolean;
   aircraft: string;
   cabinLayout: AirlineCabinLayout;
+  /** Deep link into the airline app (may fall back to web). */
+  bookingAppUrl: string;
+  /** Browser booking URL for the airline. */
+  bookingWebUrl: string;
+}
+
+export interface HospitalSearchParams {
+  query: string;
+  state?: string;
+  city?: string;
+  limit?: number;
+}
+
+export interface BoardingPassExtract {
+  airline: string | null;
+  flightNumber: string | null;
+  seatNumber: string | null;
+  departureAirport: string | null;
+  arrivalAirport: string | null;
+  departureDate: string | null;
+  passengerName: string | null;
+  rawText: string;
+  confidence: number;
+  sourceImageUri?: string;
 }
 
 export type SeatClass = 'first' | 'premium' | 'economy';
@@ -235,23 +353,36 @@ export interface ItinerarySummary {
     seat: SeatSelection | null;
   } | null;
   dining: { count: number; names: string[] };
-  groundTransit: { provider: string; label: string; estimatedCost: number } | null;
-  carRental: { provider: string; label: string; weeklyRate: number } | null;
+  entertainment: { count: number; names: string[] };
+  groundTransit: {
+    rideTransport: { provider: string; label: string; estimatedCost: number } | null;
+    carRental: { provider: string; label: string; weeklyRate: number } | null;
+  };
   estimatedTotal: number;
   completionPercent: number;
   isReadyToConfirm: boolean;
 }
 
+export type CityPlaceCategory = 'dining' | 'gym' | 'entertainment' | 'grocery';
+
 export interface Restaurant {
   id: string;
   hospitalId: string;
   name: string;
+  /** Display subcategory (cuisine, “Yoga”, “Museum”, etc.). */
   cuisine: string;
+  category: CityPlaceCategory;
   distanceMiles: number;
   priceLevel: 1 | 2 | 3;
   rating: number;
   openLate: boolean;
+  placeId?: string;
+  vicinity?: string;
+  bookingWebUrl?: string;
 }
+
+/** Alias used by City Finder for non-dining venues as well. */
+export type CityPlace = Restaurant;
 
 export interface TransitOption {
   id: string;

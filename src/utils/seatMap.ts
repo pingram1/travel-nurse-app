@@ -2,7 +2,7 @@ import type { AirlineCabinLayout, SeatCell, SeatClass, SeatSelection } from '@/t
 
 const COLUMNS_3_3 = ['A', 'B', 'C', '', 'D', 'E', 'F'] as const;
 
-/** Deterministic pseudo-random occupancy from seat id (demo data). */
+/** Deterministic occupancy pattern for cabin layout previews. */
 function isOccupied(seatId: string): boolean {
   let hash = 0;
   for (let i = 0; i < seatId.length; i += 1) {

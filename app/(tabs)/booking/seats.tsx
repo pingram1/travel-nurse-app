@@ -1,100 +1,123 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
-import { PlaneSeatMap3D } from '@/components/domain/PlaneSeatMap3D';
-import { Button, Card } from '@/components/ui';
+import { AircraftLocator3D } from '@/components/domain/AircraftLocator3D';
+import { Button, Card, Input } from '@/components/ui';
 import { useTrip } from '@/hooks/useTrip';
-import { getNextStep, getStepRoute, resolveWorkflowSteps } from '@/utils/booking';
-import { formatCurrency } from '@/utils/currency';
-import { buildSeatMap, applySeatSelection, toSeatSelection } from '@/utils/seatMap';
+import { BOOKING_HREF } from '@/utils/booking';
+import { parseSeatNumber } from '@/utils/aircraftPosition';
+import type { SeatSelection } from '@/types';
 
-export default function SeatSelectionScreen() {
+export default function SeatLocatorScreen() {
   const router = useRouter();
-  const { flightId } = useLocalSearchParams<{ flightId?: string }>();
   const trip = useTrip();
-  const [draftSeatId, setDraftSeatId] = useState<string | null>(trip.selectedSeat?.seatId ?? null);
+  const [manualSeat, setManualSeat] = useState(trip.selectedSeat?.label ?? '');
+  const [error, setError] = useState<string | null>(null);
 
-  const flight =
-    trip.selectedFlight ??
-    (flightId ? (trip.flights.find((f) => f.id === flightId) ?? null) : null);
+  const flight = trip.selectedFlight;
+  const seat = trip.selectedSeat;
 
-  const baseSeats = useMemo(
-    () => (flight ? buildSeatMap(flight.airline, flight.cabinLayout) : []),
-    [flight],
-  );
+  const applyManualSeat = () => {
+    if (!flight) {
+      setError('Select a flight and complete airline booking first.');
+      return;
+    }
+    const parsed = parseSeatNumber(manualSeat);
+    if (!parsed) {
+      setError('Enter a seat like 12C or 8A.');
+      return;
+    }
+    const selection: SeatSelection = {
+      flightId: flight.id,
+      seatId: `${parsed.row}${parsed.column}`,
+      row: parsed.row,
+      column: parsed.column,
+      seatClass: parsed.row <= 4 ? 'first' : parsed.row <= 8 ? 'premium' : 'economy',
+      price: 0,
+      label: `${parsed.row}${parsed.column}`,
+    };
+    trip.selectSeat(selection);
+    setError(null);
+  };
 
-  const seats = useMemo(() => applySeatSelection(baseSeats, draftSeatId), [baseSeats, draftSeatId]);
-
-  const draftSeat = seats.find((s) => s.id === draftSeatId) ?? null;
-
-  if (!flight) {
+  if (!flight && !trip.boardingPass) {
     return (
       <View className="flex-1 bg-surface-canvas p-4">
         <Card>
           <Text className="text-sm text-slate-600">
-            Select a flight in the Trip Hub first, then return here to pick your seat.
+            Book on the airline, then upload or enter your boarding pass. This screen shows where
+            your seat sits on a generic aircraft — it is not used for booking.
           </Text>
+          <View className="mt-3 gap-2">
+            <Button
+              label="Import boarding pass"
+              onPress={() => router.push(BOOKING_HREF.boardingPass)}
+            />
+            <Button label="Back to Trip Hub" variant="soft" onPress={() => router.back()} />
+          </View>
         </Card>
       </View>
     );
   }
 
-  const confirmSeat = () => {
-    if (!draftSeat || draftSeat.status === 'occupied') return;
-    trip.selectSeat(toSeatSelection(flight.id, draftSeat));
-    const next = getNextStep(resolveWorkflowSteps(trip.housingFirstEnabled), 'seats');
-    if (!next) return;
-    trip.setActiveStep(next);
-    const route = getStepRoute(next);
-    if (route) router.push(route);
-  };
-
-  const seatLabel = draftSeat
-    ? draftSeat.id.startsWith('zone')
-      ? draftSeat.id.replace(/-/g, ' ').toUpperCase()
-      : `${draftSeat.row}${draftSeat.column}`
-    : null;
-  const seatPriceNote =
-    draftSeat && draftSeat.price > 0 ? ` · +${formatCurrency(draftSeat.price)}` : ' · Included';
-
   return (
     <ScrollView className="flex-1 bg-surface-canvas" contentContainerClassName="gap-4 p-4 pb-8">
       <View className="rounded-2xl bg-medical-800 p-5">
         <Text className="text-xs font-semibold uppercase tracking-widest text-medical-200">
-          3D Seat Selection
+          Seat locator
         </Text>
         <Text className="mt-1 text-2xl font-bold text-white">
-          {flight.airline} {flight.flightNumber}
+          {flight ? `${flight.airline} ${flight.flightNumber}` : 'Your booked flight'}
         </Text>
         <Text className="mt-1 text-sm text-medical-100">
-          {flight.departureAirport} → {flight.arrivalAirport} · {flight.aircraft}
+          {flight
+            ? `${flight.departureAirport} → ${flight.arrivalAirport}`
+            : 'Position from boarding pass'}
         </Text>
       </View>
 
-      <PlaneSeatMap3D
-        seats={seats}
-        selectedSeatId={draftSeatId}
-        airline={flight.airline}
-        aircraft={flight.aircraft}
-        isOpenSeating={flight.cabinLayout === 'southwest-open'}
-        onSelectSeat={(seat) => {
-          if (seat.status !== 'occupied') setDraftSeatId(seat.id);
-        }}
+      <AircraftLocator3D
+        seat={seat}
+        airline={flight?.airline ?? trip.boardingPass?.airline ?? 'Airline'}
+        aircraft={flight?.aircraft ?? 'Generic aircraft'}
       />
 
-      <Card title="Selection">
-        <Text className="text-sm text-slate-600">
-          {seatLabel
-            ? `Seat ${seatLabel}${seatPriceNote}`
-            : 'Pan the cabin and tap an available seat.'}
-        </Text>
+      <Card title="Seat from boarding pass">
+        <View className="gap-3">
+          <Text className="text-sm text-slate-600">
+            Booking happens on the airline site or app. After you book, import your pass or type the
+            seat number to place the glowing marker.
+          </Text>
+          <Input
+            label="Seat number"
+            value={manualSeat}
+            onChangeText={setManualSeat}
+            autoCapitalize="characters"
+            placeholder="e.g. 14C"
+            hint="Parsed automatically from OCR when available"
+          />
+          {error ? <Text className="text-sm font-medium text-danger-600">{error}</Text> : null}
+          <Button label="Update seat marker" variant="soft" onPress={applyManualSeat} />
+          <Button
+            label="Upload / scan boarding pass"
+            variant="ghost"
+            onPress={() => router.push(BOOKING_HREF.boardingPass)}
+          />
+        </View>
       </Card>
 
       <Button
-        label={draftSeat ? 'Confirm seat & continue to food' : 'Select a seat to continue'}
-        disabled={!draftSeat}
-        onPress={confirmSeat}
+        label="Continue to food finder"
+        onPress={() => {
+          trip.setActiveStep('dining');
+          router.push(BOOKING_HREF.dining);
+        }}
+      />
+      <Button
+        label="Back to Trip Hub"
+        variant="soft"
+        onPress={() => router.push(BOOKING_HREF.hub)}
       />
     </ScrollView>
   );

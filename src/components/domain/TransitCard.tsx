@@ -1,17 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 
-import { Badge } from '@/components/ui';
+import { Badge, Button, PressableScale } from '@/components/ui';
+import { SHADOWS } from '@/constants/theme';
 import type { TransitOption, TransitProvider } from '@/types';
 import { formatCurrency } from '@/utils/currency';
 
 const providerMeta: Record<
   TransitProvider,
-  { name: string; icon: 'car' | 'car-sport' | 'key'; color: string }
+  { name: string; icon: 'car' | 'car-sport'; color: string }
 > = {
   uber: { name: 'Uber', icon: 'car', color: '#000000' },
   lyft: { name: 'Lyft', icon: 'car-sport', color: '#ea0b8c' },
-  turo: { name: 'Turo', icon: 'key', color: '#121214' },
 };
 
 export interface TransitCardProps {
@@ -32,18 +32,17 @@ export function TransitCard({ option, selected = false, onSelect }: TransitCardP
   const meta = providerMeta[option.provider];
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={() => onSelect?.(option.id)}
-      className={`rounded-2xl border-2 p-4 ${
-        selected
-          ? 'border-medical-600 bg-medical-50'
-          : 'border-slate-200 bg-white active:bg-slate-50'
+      className={`rounded-3xl border-2 p-4 ${
+        selected ? 'border-medical-500 bg-medical-50' : 'border-transparent bg-white'
       }`}
+      style={selected ? SHADOWS.card : SHADOWS.soft}
     >
       <View className="flex-row items-center gap-3">
-        <View className="h-11 w-11 items-center justify-center rounded-xl bg-slate-100">
+        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
           <Ionicons name={meta.icon} size={22} color={meta.color} />
         </View>
         <View className="flex-1">
@@ -54,13 +53,14 @@ export function TransitCard({ option, selected = false, onSelect }: TransitCardP
         </View>
         {selected ? <Badge label="In itinerary" tone="success" /> : null}
       </View>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => void openProvider(option)}
-        className="mt-3 min-h-[44px] items-center justify-center rounded-xl bg-medical-600 px-4 py-3 active:bg-medical-700"
-      >
-        <Text className="text-base font-semibold text-white">Open {meta.name}</Text>
-      </Pressable>
-    </Pressable>
+      <View className="mt-3">
+        <Button
+          label={`Open ${meta.name}`}
+          variant="soft"
+          size="sm"
+          onPress={() => void openProvider(option)}
+        />
+      </View>
+    </PressableScale>
   );
 }

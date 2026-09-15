@@ -29,7 +29,19 @@
       "output": "static",
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-router", "expo-secure-store", "expo-asset", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Travel Nurse App to access photos so you can upload boarding passes.",
+          "cameraPermission": "Allow Travel Nurse App to use the camera to scan boarding passes."
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

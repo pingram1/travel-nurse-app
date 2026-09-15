@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
-import { Badge, Card, SectionHeader, Toggle } from '@/components/ui';
+import { Badge, Button, Card, HeroBanner, Input, SectionHeader, Toggle } from '@/components/ui';
 import { useStipendCalculator } from '@/hooks/useStipendCalculator';
 import { useTrip } from '@/hooks/useTrip';
 import { formatCurrency } from '@/utils/currency';
@@ -9,8 +10,19 @@ import { formatCurrency } from '@/utils/currency';
 export default function StipendScreen() {
   const stipend = useStipendCalculator();
   const trip = useTrip();
+  const [grossDraft, setGrossDraft] = useState(
+    stipend.contractGrossPay > 0 ? String(stipend.contractGrossPay) : '',
+  );
+  const [dailyDraft, setDailyDraft] = useState(
+    stipend.dailyHousingStipendRate > 0 ? String(stipend.dailyHousingStipendRate) : '',
+  );
+  const [street, setStreet] = useState(stipend.taxHomeAddress.street);
+  const [city, setCity] = useState(stipend.taxHomeAddress.city);
+  const [state, setState] = useState(stipend.taxHomeAddress.state);
+  const [zip, setZip] = useState(stipend.taxHomeAddress.zipCode);
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  // Keep the tracker in sync with the lodging market for the selected facility.
   useEffect(() => {
     stipend.setLodgingOptions(
       trip.lodging.map((listing) => ({
@@ -23,46 +35,151 @@ export default function StipendScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trip.lodging]);
 
-  return (
-    <ScrollView className="flex-1 bg-surface-canvas" contentContainerClassName="gap-4 p-4 pb-8">
-      <View className="rounded-2xl bg-medical-700 p-5">
-        <Text className="text-xs font-semibold uppercase tracking-widest text-medical-200">
-          Contract Finances
-        </Text>
-        <Text className="mt-1 text-2xl font-bold text-white">Stipend Tracker</Text>
-        <Text className="mt-1 text-sm text-medical-100">
-          {trip.hospital
-            ? `Tracking lodging variance for ${trip.hospital.name}`
-            : 'Select a facility in the Trip tab to track live lodging variance.'}
-        </Text>
-      </View>
+  const saveContractInputs = () => {
+    const gross = Number(grossDraft);
+    const daily = Number(dailyDraft);
+    if (!Number.isFinite(gross) || gross < 0 || !Number.isFinite(daily) || daily < 0) {
+      setFormError('Enter valid non-negative amounts for pay and daily stipend.');
+      return;
+    }
+    if (!city.trim() || state.trim().length !== 2 || !zip.trim()) {
+      setFormError('Tax home needs city, 2-letter state, and ZIP.');
+      return;
+    }
+    setFormError(null);
+    stipend.setContractGrossPay(gross);
+    stipend.setDailyHousingStipendRate(daily);
+    stipend.setTaxHomeAddress({
+      street: street.trim(),
+      city: city.trim(),
+      state: state.trim().toUpperCase(),
+      zipCode: zip.trim(),
+      country: 'US',
+    });
+    setUploadNote('Contract details saved.');
+  };
 
-      <Card title="Contract snapshot">
-        <View className="gap-2">
+  const uploadContractDocument = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setUploadNote('Photo library permission is required to upload a contract.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: false,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    setUploadNote(
+      `Contract image attached (${result.assets[0].fileName ?? 'document'}). Enter or confirm pay and tax-home fields below — server-side OCR will prefill these in a future release.`,
+    );
+  };
+
+  const hasContract =
+    stipend.contractGrossPay > 0 &&
+    stipend.dailyHousingStipendRate > 0 &&
+    Boolean(stipend.taxHomeAddress.city);
+
+  return (
+    <ScrollView className="flex-1 bg-surface-canvas" contentContainerClassName="gap-4 p-4 pb-10">
+      <HeroBanner
+        eyebrow="Contract finances"
+        title="Stipend Tracker"
+        subtitle={
+          trip.hospital
+            ? `Track lodging variance for ${trip.hospital.name}`
+            : 'Enter your contract pay and tax home, then select a facility for lodging variance.'
+        }
+      />
+
+      <SectionHeader
+        title="Your contract"
+        subtitle="Enter manually or attach a contract photo for your records"
+      />
+      <Card>
+        <View className="gap-3">
+          <Input
+            label="Gross weekly pay (USD)"
+            value={grossDraft}
+            onChangeText={setGrossDraft}
+            keyboardType="decimal-pad"
+            placeholder="e.g. 3200"
+          />
+          <Input
+            label="Daily housing stipend (USD)"
+            value={dailyDraft}
+            onChangeText={setDailyDraft}
+            keyboardType="decimal-pad"
+            placeholder="e.g. 110"
+          />
+          <Input label="Tax home street" value={street} onChangeText={setStreet} />
+          <Input label="City" value={city} onChangeText={setCity} />
+          <View className="flex-row gap-2">
+            <View className="flex-1">
+              <Input
+                label="State"
+                value={state}
+                onChangeText={setState}
+                autoCapitalize="characters"
+                maxLength={2}
+                placeholder="TX"
+              />
+            </View>
+            <View className="flex-1">
+              <Input
+                label="ZIP"
+                value={zip}
+                onChangeText={setZip}
+                keyboardType="number-pad"
+                maxLength={10}
+              />
+            </View>
+          </View>
+          {formError ? (
+            <Text className="text-sm font-medium text-danger-600">{formError}</Text>
+          ) : null}
+          {uploadNote ? <Text className="text-sm text-medical-700">{uploadNote}</Text> : null}
+          <Button label="Save contract details" onPress={saveContractInputs} />
+          <Button
+            label="Upload contract photo"
+            variant="soft"
+            onPress={() => void uploadContractDocument()}
+          />
+        </View>
+      </Card>
+
+      <Card title="Snapshot">
+        <View className="gap-2.5">
           <View className="flex-row items-center justify-between">
             <Text className="text-sm text-slate-600">Gross weekly pay</Text>
-            <Text className="text-sm font-semibold text-slate-900">
-              {formatCurrency(stipend.contractGrossPay)}
+            <Text className="text-sm font-bold text-slate-900">
+              {hasContract ? formatCurrency(stipend.contractGrossPay) : '—'}
             </Text>
           </View>
           <View className="flex-row items-center justify-between">
             <Text className="text-sm text-slate-600">Daily housing stipend</Text>
-            <Text className="text-sm font-semibold text-slate-900">
-              {formatCurrency(stipend.dailyHousingStipendRate)}
+            <Text className="text-sm font-bold text-slate-900">
+              {hasContract ? formatCurrency(stipend.dailyHousingStipendRate) : '—'}
             </Text>
           </View>
           <View className="flex-row items-center justify-between">
             <Text className="text-sm text-slate-600">Tax home</Text>
-            <Text className="text-sm font-semibold text-slate-900">
-              {stipend.taxHomeAddress.city}, {stipend.taxHomeAddress.state}
+            <Text className="text-sm font-bold text-slate-900">
+              {hasContract
+                ? `${stipend.taxHomeAddress.city}, ${stipend.taxHomeAddress.state}`
+                : 'Not set'}
             </Text>
           </View>
-          <View className="mt-2 rounded-xl bg-clinical-50 p-3">
-            <Text className="text-xs font-semibold uppercase tracking-wide text-clinical-700">
+          <View className="mt-2 rounded-2xl bg-clinical-50 p-4">
+            <Text className="text-xs font-bold uppercase tracking-[1px] text-clinical-700">
               Estimated take-home
             </Text>
             <Text className="mt-0.5 text-2xl font-bold text-clinical-700">
-              {formatCurrency(stipend.estimatedTakeHome)}
+              {hasContract ? formatCurrency(stipend.estimatedTakeHome) : '—'}
             </Text>
           </View>
         </View>
@@ -78,7 +195,7 @@ export default function StipendScreen() {
       </Card>
 
       {stipend.subscriptionDeductibleNote ? (
-        <Card className="border-clinical-200 bg-clinical-50">
+        <Card variant="success">
           <Text className="text-sm text-clinical-800">{stipend.subscriptionDeductibleNote}</Text>
         </Card>
       ) : null}
@@ -87,9 +204,15 @@ export default function StipendScreen() {
         title="Lodging vs. stipend variance"
         subtitle="Options priced over your daily stipend are filtered out"
       />
-      {stipend.filteredLodgingOptions.length === 0 ? (
-        <Card>
-          <Text className="text-sm text-slate-600">
+      {!hasContract ? (
+        <Card variant="soft">
+          <Text className="text-sm leading-5 text-slate-600">
+            Save your daily housing stipend above to filter lodging against your contract.
+          </Text>
+        </Card>
+      ) : stipend.filteredLodgingOptions.length === 0 ? (
+        <Card variant="soft">
+          <Text className="text-sm leading-5 text-slate-600">
             No lodging market loaded yet — pick a facility in the Trip tab.
           </Text>
         </Card>

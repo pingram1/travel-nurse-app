@@ -1,18 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 
-// Enterprise healthcare palette — deep clinical blues, sterile neutrals,
-// and safety greens. `brand` aliases `medical` so existing classes keep working.
+// Careflow palette — bright clinical azure, soft mist canvas, safety greens.
+// `brand` aliases `medical` so existing classes keep working.
 const medical = {
-  50: '#f0f6fb',
-  100: '#dceaf5',
-  200: '#b5d2e9',
-  300: '#86b4d9',
-  400: '#5292c6',
-  500: '#2e74ac',
-  600: '#1c5a8d',
-  700: '#154569',
-  800: '#0f3049',
-  900: '#091e2e',
+  50: '#eef5ff',
+  100: '#dcecff',
+  200: '#c2dcff',
+  300: '#93c0ff',
+  400: '#5a9dff',
+  500: '#4894fe',
+  600: '#2f7ae8',
+  700: '#1f63c9',
+  800: '#1a4f9e',
+  900: '#163f7c',
 };
 
 const clinical = {
@@ -36,21 +36,26 @@ module.exports = {
         brand: medical,
         surface: {
           light: '#ffffff',
-          canvas: '#f4f8fb',
-          dark: '#091e2e',
+          canvas: '#f2f6fc',
+          mist: '#e8f0fb',
+          dark: '#0b1f38',
         },
         caution: {
           50: '#fffbeb',
           100: '#fef3c7',
-          600: '#d97706',
+          600: '#e8a317',
           800: '#92400e',
         },
         danger: {
           50: '#fef2f2',
           100: '#fee2e2',
-          600: '#dc2626',
+          600: '#e5484d',
           800: '#991b1b',
         },
+      },
+      borderRadius: {
+        '2xl': '1.25rem',
+        '3xl': '1.5rem',
       },
       spacing: {
         4.5: '18px',

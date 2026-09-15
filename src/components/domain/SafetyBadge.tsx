@@ -3,11 +3,11 @@ import { Text, View } from 'react-native';
 import type { SafetyRating } from '@/types';
 
 const gradeColors: Record<SafetyRating['overallGrade'], { bg: string; text: string }> = {
-  A: { bg: 'bg-green-100', text: 'text-green-800' },
-  B: { bg: 'bg-lime-100', text: 'text-green-800' },
-  C: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
-  D: { bg: 'bg-orange-100', text: 'text-orange-800' },
-  F: { bg: 'bg-red-100', text: 'text-red-800' },
+  A: { bg: 'bg-clinical-100', text: 'text-clinical-700' },
+  B: { bg: 'bg-clinical-50', text: 'text-clinical-700' },
+  C: { bg: 'bg-caution-100', text: 'text-caution-800' },
+  D: { bg: 'bg-caution-100', text: 'text-caution-800' },
+  F: { bg: 'bg-danger-100', text: 'text-danger-800' },
 };
 
 export interface SafetyBadgeProps {
@@ -18,7 +18,7 @@ export function SafetyBadge({ rating }: SafetyBadgeProps) {
   const colors = gradeColors[rating.overallGrade];
 
   return (
-    <View className={`self-start rounded-full px-3 py-1 ${colors.bg}`}>
+    <View className={`self-start rounded-full px-3.5 py-1.5 ${colors.bg}`}>
       <Text className={`text-sm font-bold ${colors.text}`}>
         Safety Grade: {rating.overallGrade}
       </Text>
